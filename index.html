@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Image Compressor</title>
+
+		<!-- Bootstrap and Font Awesome CSS -->
+		<link
+			rel="stylesheet"
+			href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
+		<link
+			rel="stylesheet"
+			href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+			integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+			crossorigin="anonymous"
+			referrerpolicy="no-referrer" />
+		<link rel="stylesheet" href="styles.css" />
+		<link rel="icon" href="/favicon.png" />
+
+		<!-- Bootstrap JS and Popper.js -->
+		<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.0.7/dist/umd/popper.min.js"></script>
+		<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+		<!-- Image Compressor and jQuery -->
+		<script src="/js-image-compressor-master/dist/image-compressor.js"></script>
+		<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+	</head>
+	<body>
+		<div id="contentWrapper">
+			<!-- Image Slider Container -->
+			<figure class="cd-image-container">
+				<img
+					src="/photo-1441974231531-c6227db76b6e.jpeg"
+					alt="Original Image" />
+				<span class="cd-image-label" data-type="original"
+					>Original</span
+				>
+
+				<div class="cd-resize-img">
+					<img
+						src="/photo-1441974231531-c6227db76b6e (1).jpeg"
+						alt="Modified Image" />
+					<span class="cd-image-label" data-type="modified"
+						>Compressed</span
+					>
+				</div>
+				<div class="cd-handle cd-vertical-line"></div>
+				<span class="cd-handle"></span>
+			</figure>
+
+			<div class="infos-content">
+				<!-- File Upload Input -->
+				<form id="uploadForm">
+					<div class="img-chooser">
+						<button
+							class="btn btn-outline-info btn-upload"
+							type="button"
+							id="uploadButton">
+							<i class="fas fa-upload"></i>
+							Upload Image
+						</button>
+						<input
+							type="file"
+							name="image"
+							accept="image/*"
+							id="fileInput"
+							style="display: none" />
+					</div>
+					<div class="controls-container">
+						<div class="slider">
+							<div class="label"><p>Quality:</p></div>
+							<div class="range-slider">
+								<div
+									id="slider_thumb"
+									class="range-slider_thumb"></div>
+								<div class="range-slider_line">
+									<div
+										id="slider_line"
+										class="range-slider_line-fill"></div>
+								</div>
+
+								<input
+									id="slider_input"
+									class="range-slider_input"
+									type="range"
+									value="100"
+									min="1"
+									max="100" />
+							</div>
+						</div>
+					</div>
+
+					<div class="d-flex justify-content-end">
+						<button
+							class="btn btn-outline-info"
+							type="button"
+							onclick="compressAndUpload()">
+							<i class="fas fa-file-image"></i>
+							Compress
+						</button>
+					</div>
+				</form>
+
+				<!-- Original and Compressed Size Display -->
+				<div class="size-info">
+					<p class="original-size">
+						<span id="originalSize"></span>
+					</p>
+					<p class="compressed-size">
+						<span id="compressedSize"></span>
+					</p>
+					<p class="compression-drop">
+						<span id="compressionDrop"></span>
+					</p>
+				</div>
+
+				<!-- Download Button -->
+				<button
+					class="btn btn-outline-success"
+					id="downloadButton"
+					onclick="downloadCompressedImage()">
+					<i class="fas fa-download mr-2"></i>
+					Download
+				</button>
+			</div>
+		</div>
+
+		<!-- Your existing scripts.js -->
+		<script src="scripts.js"></script>
+
+		<script>
+			// Event listener for the "Upload" button
+			document
+				.getElementById('uploadButton')
+				.addEventListener('click', function () {
+					document.getElementById('fileInput').click();
+				});
+
+			// Function to compress and upload the image
+			function compressAndUpload() {
+				var fileInput = document.querySelector('input[name="image"]');
+				var file = fileInput.files[0];
+				var compressionRatio =
+					document.getElementById('slider_input').value / 100;
+
+				if (file) {
+					var options = {
+						file: file,
+						quality: compressionRatio,
+						mimeType: 'image/jpeg',
+						maxWidth: 2000,
+						maxHeight: 2000,
+						width: 1000,
+						height: 1000,
+						minWidth: 500,
+						minHeight: 500,
+						convertSize: Infinity,
+						loose: true,
+						redressOrientation: true,
+						beforeCompress: function (result) {
+							console.log(
+								'Image size before compression:',
+								result.size
+							);
+							console.log('mime type:', result.type);
+						},
+						success: function (result) {
+							console.log(
+								'Image size after compression:',
+								result.size
+							);
+							console.log('mime type:', result.type);
+							console.log(
+								'Actual compression ratio:',
+								(
+									((file.size - result.size) / file.size) *
+									100
+								).toFixed(2) + '%'
+							);
+
+							// Update file size information
+							$('#originalSize').text(
+								'Original: ' + formatFileSize(file.size)
+							);
+							$('#compressedSize').text(
+								'Compressed: ' + formatFileSize(result.size)
+							);
+
+							$('#compressionDrop').html(
+								'Size Drop: ' +
+									'<i class="fas fa-arrow-down"></i>' +
+									' ' +
+									calculateCompressionDrop(
+										file.size,
+										result.size
+									)
+							);
+
+							// Use the compressed image for display or further processing
+							var compressedImageURL =
+								URL.createObjectURL(result);
+							$('.cd-resize-img img').attr(
+								'src',
+								compressedImageURL
+							);
+						},
+						error: function (msg) {
+							console.error(msg);
+						},
+					};
+
+					new ImageCompressor(options);
+				}
+			}
+
+			// Utility functions for formatting file size and calculating compression drop
+			function formatFileSize(size) {
+				const units = ['Bytes', 'KB', 'MB', 'GB'];
+				let i = 0;
+				while (size >= 1024 && i < units.length - 1) {
+					size /= 1024;
+					i++;
+				}
+				return size.toFixed(2) + ' ' + units[i];
+			}
+
+			function calculateCompressionDrop(originalSize, compressedSize) {
+				const dropPercentage =
+					((originalSize - compressedSize) / originalSize) * 100;
+				return dropPercentage.toFixed(2) + '%';
+			}
+
+			// Update the displayed compression ratio value and sizes when the slider is moved
+			$('#compressionSlider').on('input', function () {
+				$('#compressionValue').text(this.value + '%');
+			});
+
+			// Update sizes when the "Upload" button is pressed
+			$('#uploadForm button').on('click', function () {
+				compressAndUpload();
+			});
+
+			// Function to download the compressed image
+			function downloadCompressedImage() {
+				var compressedImageURL = $('.cd-resize-img img').attr('src');
+
+				var downloadLink = document.createElement('a');
+				downloadLink.href = compressedImageURL;
+				downloadLink.download = 'compressed_image.jpg';
+
+				document.body.appendChild(downloadLink);
+				downloadLink.click();
+				document.body.removeChild(downloadLink);
+			}
+
+			// Event listeners and functions for slider visualization
+			const slider_input = document.getElementById('slider_input'),
+				slider_thumb = document.getElementById('slider_thumb'),
+				slider_line = document.getElementById('slider_line');
+
+			function showSliderValue() {
+				slider_thumb.innerHTML = slider_input.value;
+				const bulletPosition = slider_input.value / slider_input.max,
+					space = slider_input.offsetWidth - slider_thumb.offsetWidth;
+
+				slider_thumb.style.left = bulletPosition * space + 'px';
+				slider_line.style.width = slider_input.value + '%';
+			}
+
+			showSliderValue();
+			window.addEventListener('resize', showSliderValue);
+			slider_input.addEventListener('input', showSliderValue, false);
+		</script>
+	</body>
+</html>
